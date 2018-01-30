@@ -1,37 +1,34 @@
 from fysom import *
 from random import *
-
+from time import ctime
 from jibo_msgs.msg import JiboAction
 from jibo_msgs.msg import JiboVec3
 from std_msgs.msg import Header  # standard ROS msg header
 
-import os
+import speech_recognition as sr
+import jibo_message_fns as jms
+import sys, select
+import pyaudio
 import time
 import rospy
-import pyaudio
 import keyboard
 import recorder
-import datetime
-import sys, select
-import question_selector
-import speech_recognition as sr
 
 
  ####GLOBAL_VARIABLES####
 repeat_instructions = True
 repeat_question = True
 repeat_silence = True
-QUIT = False
 num_questions_asked = 1
 counter = 0
-
+max_silence = 3
 index = str(pyaudio.PyAudio().get_device_count() - 1)
 index = int(index[:2])
 TALKING = False
 TIMEOUT = 5
-
 PREV_STATE = 'instructions'
-question_list = question_selector.random_selector()
+timestamp = ctime()
+mySender = jms.RobotSender()
 
 fsm = Fysom({'initial': 'instructions',
              'final': 'end',
@@ -62,7 +59,8 @@ fsm = Fysom({'initial': 'instructions',
 
 
 def send_robot_tts_cmd(string):
-    print(string)
+    mySender.send_robot_tts_cmd(string)
+    rospy.spin()  
 
 def oninstructions():
     if repeat_instructions:
@@ -78,18 +76,19 @@ def onsilence():
 def onquestion():
     if repeat_question:
         if num_questions_asked == 1:
+            #Neutral Question
             send_robot_tts_cmd("Here is the first question")
-            send_robot_tts_cmd(question_list[0])
+            send_robot_tts_cmd("What is something you did for another person today?")
             send_robot_tts_cmd("Say 'start' when you're ready to start and 'done' when you're finished answering.")
-
         if num_questions_asked == 2:
+            #Negative Question
             send_robot_tts_cmd("Here is the second question")
-            send_robot_tts_cmd(question_list[1])
+            send_robot_tts_cmd("Was there anything that made you angry today?")
             send_robot_tts_cmd("Say 'start' when you're ready to start and 'done' when you're finished answering.")
-
         if num_questions_asked == 3:
+            #Positive Question
             send_robot_tts_cmd("Here is the third question")
-            send_robot_tts_cmd(question_list[2])
+            send_robot_tts_cmd("What is something fun you did today?")
             send_robot_tts_cmd("Say 'start' when you're ready to start and 'done' when you're finished answering.")
     else:
         pass
@@ -114,11 +113,12 @@ def onfinish_task():
         except sr.UnknownValueError:
             counter1 += 1
             if counter1 <= 2:
-                print(counter1)
+                print(counter)
                 pass
             else:
                 loop = False
                 send_robot_tts_cmd("Bye bye!2")
+    #should wait some time for a child response and then stop recording audio and save
 
 def silent_return(state):
     if state == 'instructions':
@@ -131,19 +131,16 @@ def silent_return(state):
     if state == 'done':
         fsm.silence_to_done()
 
-
 def format_filename(time):
     time = time.replace(" ", "_")
     time = time + ".wav"
     return time
 
-filename = format_filename(str(datetime.datetime.now()))
-
 
 if __name__ == '__main__':
 
     rec = recorder.Recorder(channels=2)
-    with rec.open(filename, 'wb') as recfile2:
+    with rec.open(format_filename(timestamp), 'wb') as recfile2:
         recfile2.start_recording()
         time.sleep(5.0)
     
@@ -186,6 +183,7 @@ if __name__ == '__main__':
 
             
             while fsm.current == 'question':
+                send_robot_tts_cmd("moved on to question!")
     	        onquestion()
                 repeat_question = False
 
@@ -255,7 +253,6 @@ if __name__ == '__main__':
                 with sr.Microphone(index) as source:
                     r4.adjust_for_ambient_noise(source)
                     print("before")
-
                     audio = r4.listen(source)
                     print("LISTENING")
 
@@ -318,7 +315,6 @@ if __name__ == '__main__':
                     else:
                         print("HERE!!!!!!!!!!")
                         counter = 0
-                        QUIT = True
                         fsm.silence_to_end()
                 
         
@@ -327,20 +323,3 @@ if __name__ == '__main__':
             onfinish_task()  
 
     recfile2.stop_recording()
-    print("WE ARE DONE WITH THE THING")
-    if QUIT:
-        print("you quit")
-        src = "/home/prg-brix7/projects/ros_catkin_ws/src/jibo_msgs/" + filename
-        dst = "/home/prg-brix7/projects/ros_catkin_ws/src/jibo_msgs/audio_files/failure/FAIL_" + filename
-    else:
-        print("you did not quit. Good for you")
-        src = "/home/prg-brix7/projects/ros_catkin_ws/src/jibo_msgs/" + filename
-        dst = "/home/prg-brix7/projects/ros_catkin_ws/src/jibo_msgs/audio_files/success/" + filename
-
-        if os.path.isfile(src):
-            print("that is the filename")
-            os.rename(src, dst)
-
-
-            
-    
