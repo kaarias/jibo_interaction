@@ -6,6 +6,7 @@ from jibo_msgs.msg import JiboVec3
 from std_msgs.msg import Header  # standard ROS msg header
 
 import os
+import sys
 import time
 import rospy
 import pyaudio
@@ -152,7 +153,9 @@ if __name__ == '__main__':
 
             while fsm.current == 'instructions':
                 PREV_STATE = 'instructions'
-
+                sys.path.insert(0, '/home/prg-brix7/Moody_BackChanneling-master/Live')
+                import saver 
+                #import node_ComponentManager
                 oninstructions()
                 repeat_instructions = False
 
@@ -335,7 +338,7 @@ if __name__ == '__main__':
         dst = "/home/prg-brix7/projects/ros_catkin_ws/src/jibo_msgs/audio_files/failure/FAIL_" + filename
         os.rename(src, dst)
     else:
-        print("you did not quit. Good for you")
+        print("You did not quit. Good for you")
         src = "/home/prg-brix7/projects/ros_catkin_ws/src/jibo_msgs/" + filename
         dst = "/home/prg-brix7/projects/ros_catkin_ws/src/jibo_msgs/audio_files/success/" + filename
         os.rename(src, dst)

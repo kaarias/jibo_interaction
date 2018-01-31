@@ -31,13 +31,13 @@ neg7 = 'What is something you did today to distract you from negative thoughts?'
 positive = [pos1, pos2, pos3, pos4, pos5, pos6, pos7, pos8]
 negative = [neg1, neg2, neg3, neg4, neg5, neg6, neg7]
 neutral = [neut1, neut2, neut3, neut4, neut5, neut6, neut7]
+full = positive + negative + neutral
 
 def random_selector():
-    posq = random.choice(positive)
-    negq = random.choice(negative)
-    neutq = random.choice(neutral)
-    questions = [posq, negq, neutq]
-    questions = random.sample(questions, len(questions))   
+    questions = []
+    while len(questions) < 3:
+        new = random.choice(full)
+        if new not in questions:
+            questions.append(new)
     return questions
-
 
