@@ -327,19 +327,19 @@ if __name__ == '__main__':
             onfinish_task()  
 
     recfile2.stop_recording()
+
     print("WE ARE DONE WITH THE THING")
     if QUIT:
         print("you quit")
         src = "/home/prg-brix7/projects/ros_catkin_ws/src/jibo_msgs/" + filename
         dst = "/home/prg-brix7/projects/ros_catkin_ws/src/jibo_msgs/audio_files/failure/FAIL_" + filename
+        os.rename(src, dst)
     else:
         print("you did not quit. Good for you")
         src = "/home/prg-brix7/projects/ros_catkin_ws/src/jibo_msgs/" + filename
         dst = "/home/prg-brix7/projects/ros_catkin_ws/src/jibo_msgs/audio_files/success/" + filename
+        os.rename(src, dst)
 
-        if os.path.isfile(src):
-            print("that is the filename")
-            os.rename(src, dst)
 
 
             
