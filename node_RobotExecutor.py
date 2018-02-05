@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 import time
 import rospy # ROS
-from r1d1_msgs.msg import TegaAction # ROS msgs to talk to Tega
-from r1d1_msgs.msg import TegaState # ROS msgs to get info from Tega
-from r1d1_msgs.msg import Vec3
+from jibo_msgs.msg import JiboAction # ROS msgs to talk to Jibo
+from jibo_msgs.msg import JiboState # ROS msgs to get info from Jibo
+from jibo_msgs.msg import JiboVec3
 from std_msgs.msg import Bool # for child_attention topic
 from std_msgs.msg import Header # standard ROS msg header
 from std_msgs.msg import String
@@ -20,28 +20,24 @@ from random import randint
         "NO", nope_01_01.keys
         "FRUSTRATED", frustrated_01.keys
         "SAD", sad_02.keys
-
         "NOD", listening_begin_02.keys
         "FLAT_AGREEMENT", listening_begin_02.keys 
         "PERKUP", perkup_01.keys
         "PUZZLED", confused_01.keys
         "SCARED", scared_sound_00.keys
         "SILENT_SAD", sad_02.keys
-
         "EXCITED", happy_05.keys
         "INTERESTED", interested_01.keys
         "THINKING", thinking_08.keys
         "YAWN", yawn_03.keys 
         "POSE1", body_lean_right_01_01.keys
         "POSE2", body_lean_left_01_01.keys
-
         "SHIMMY", seaweed_01_01.keys
         "HAPPY_DANCE", carlton_01_01.keys
         "HAPPY_WIGGLE", happy_dance_01.keys
         "POSE_SLEEPING", sleeping_idle_00_01.keys
         "SHIFT_WEIGHT1", shift_01.keys
         "SHIFT_WEIGHT2", shift_10.keys
-
         "SWAY", samba_01_01.keys
         "DANCE", side_shaker_01_01.keys
         "ROCKING", rocking_01.keys
@@ -56,30 +52,30 @@ ISSPEAKING_THRESHOLD = 0 # > ISSPEAKING_THRESHOLD is speaking
 last_sb = 0
 
 def send_motion_message(motion):
-    """ Publish TegaAction do motion message """
+    """ Publish JiboAction do motion message """
     #print 'sending motion message: %s' % motion
     print 'sending motion message'
-    msg = TegaAction()
+    msg = JiboAction()
     msg.do_motion = True
     msg.motion = motion
     pub_re.publish(msg)
     #rospy.loginfo(msg)
 
 def send_lookat_message(lookat):
-    """ Publish TegaAction lookat message """
+    """ Publish JiboAction lookat message """
     #print 'sending lookat message: %s' % lookat
     print 'sending lookat message'
-    msg = TegaAction()
+    msg = JiboAction()
     msg.do_look_at = True
     msg.look_at = lookat
     pub_re.publish(msg)
     rospy.loginfo(msg)
     
 def send_motion_lookat_message(motion,lookat):
-    """ Publish TegaAction motion_lookat message """
+    """ Publish JiboAction motion_lookat message """
     #print 'sending lookat message: %s' % lookat
     print 'sending motion_lookat message'
-    msg = TegaAction()
+    msg = JiboAction()
     msg.do_look_at = True
     msg.look_at = lookat
     msg.do_motion = True
@@ -88,29 +84,29 @@ def send_motion_lookat_message(motion,lookat):
     rospy.loginfo(msg)
 
 def send_speech_message(speech):
-    """ Publish TegaAction playback audio message """
+    """ Publish JiboAction playback audio message """
     #print '\nsending speech message: %s' % speech
     print '\nsending speech message'
-    msg = TegaAction()
+    msg = JiboAction()
     msg.do_sound_playback = True
     msg.wav_filename = speech
     pub_re.publish(msg)
     #rospy.loginfo(msg)
     
 def send_tts_message(): #not working
-    """ Publish TegaAction tts message """
+    """ Publish JiboAction tts message """
     #print '\nsending speech message: %s' % speech
     print '\nsending tts message'
-    msg = TegaAction()
+    msg = JiboAction()
     msg.do_text_to_speech = True
     msg.tts_text = "hello"
     pub_re.publish(msg)
     rospy.loginfo(msg)
     
 def send_speech_motion_message(speech,motion):
-    """ Publish TegaAction playback audio message """
+    """ Publish JiboAction playback audio message """
     print '\nsending speech and motion message'
-    msg = TegaAction()
+    msg = JiboAction()
     msg.do_sound_playback = True
     msg.wav_filename = speech
     msg.do_motion = True
@@ -120,15 +116,15 @@ def send_speech_motion_message(speech,motion):
 
 def onMessageReceived_rs(data): #robot state
     global flags
-    # when we get tega state messages, set a flag indicating whether the
+    # when we get jibo state messages, set a flag indicating whether the
     # robot is in motion or playing sound or not
-    flags.tega_is_playing_sound = data.is_playing_sound
+    flags.jibo_is_playing_sound = data.is_playing_sound
 
-    # Instead of giving us a boolean to indicate whether tega is in motion
+    # Instead of giving us a boolean to indicate whether jibo is in motion
     # or not, we get the name of the animation. Let's check whether it is
     # our "idle" animation (usually, the idle animation is either
     # MOTION_IDLESTILL or MOTION_BREATHING).
-    flags.tega_is_doing_motion = data.doing_motion
+    flags.jibo_is_doing_motion = data.doing_motion
     
     print flags
     
@@ -215,8 +211,8 @@ def isSpeaking():
     return False
             
 node = rospy.init_node('node_RobotExecutor', anonymous=True)
-pub_re = rospy.Publisher('tega', TegaAction, queue_size = 1)
-sub_rs = rospy.Subscriber('msg_rs', TegaState, onMessageReceived_rs) #robot state
+pub_re = rospy.Publisher('jibo', JiboAction, queue_size = 1)
+sub_rs = rospy.Subscriber('msg_rs', JiboState, onMessageReceived_rs) #robot state
 sub_bc = rospy.Subscriber('msg_bc', String, onMessageReceived_bc) #backchanneling
 sub_gui_re = rospy.Subscriber('msg_gui_re', String, onMessageReceived_gui_re)
 #sub_sb = rospy.Subscriber('msg_sb/raw', Int32, onMessageReceived_sb)
