@@ -59,44 +59,129 @@ fsm = Fysom({'initial': 'instructions',
                 {'name': 'silence_to_silence', 'src': 'silence', 'dst': 'silence'}]})
 
 
+#############################################################################################
+ROSCORE_TO_JIBO_TOPIC = '/jibo'
+
+class RobotSender:
+
+    def __init__(self):
+        self.robot_commander = None
+
+    def start_robot_publisher(self):
+        """
+        Starts up the robot publisher node
+        """
+
+        rospy.init_node('Jibo_Test_Node', anonymous=True)
+        print('Robot Pub Node started')
+
+        
+        msgType = JiboAction
+        msgTopic = ROSCORE_TO_JIBO_TOPIC
+
+        self.robot_commander = rospy.Publisher(msgTopic, msgType, queue_size=10)
+        rate = rospy.Rate(10)  # spin at 10 Hz
+        rate.sleep()  # sleep to wait for subscribers
+  
+    def send_robot_motion_cmd(self, command):
+        """
+        send a Motion Command to Jibo
+        """
+
+        msg = JiboAction()
+        # add header
+        msg.header = Header()
+        msg.header.stamp = rospy.Time.now()
+
+        
+        msg.do_motion = True
+        msg.do_tts = False
+        msg.do_lookat = False
+
+        msg.motion = command   
+
+        self.robot_commander.publish(msg)
+        rospy.loginfo(msg)
 
 
+    def send_robot_tts_cmd(self, text, *args):
+        """
+        send a Motion Command to Jibo
+        """
 
-def send_robot_tts_cmd(string):
-    print(string)
+        msg = JiboAction()    
+        # add header
+        msg.header = Header()
+        msg.header.stamp = rospy.Time.now()
+
+        
+        msg.do_motion = False
+        msg.do_tts = True
+        msg.do_lookat = False
+
+        msg.tts_text = text
+
+        self.robot_commander.publish(msg)
+        rospy.loginfo(msg)
+
+mySender = RobotSender()
+mySender.start_robot_publisher()
+mySender.start_robot_publisher()
+
+def send_robot_tts_cmd(string1):
+    mySender.send_robot_tts_cmd(string1)
+    #print(string)
+
+################################################################################
+
 
 def oninstructions():
     if repeat_instructions:
         send_robot_tts_cmd("Lets talk")
-	send_robot_tts_cmd("I am going to ask you three questions and you can share your thoughts with me. We will do one question at a time. When you start a question please say 'start'. When you're finished talking say 'done'")
+        time.sleep(1)
+	send_robot_tts_cmd("I am going to ask you three questions and you can share your thoughts with me. We will do one question at a time.")
+        time.sleep(1)
+        send_robot_tts_cmd("When you start a question please say 'start'. When you're finished talking say 'done'")
+        time.sleep(1)
 	send_robot_tts_cmd("Are you ready? If you're ready say 'continue'. If you want me to repeat the instructions say 'repeat'.")
     else:
         pass
 
 def onsilence():
     send_robot_tts_cmd("Are you still there? If you are still there and would like to continue please say 'continue'.")
+    time.sleep(1)
 
 def onquestion():
     if repeat_question:
         if num_questions_asked == 1:
             send_robot_tts_cmd("Here is the first question")
+            time.sleep(3)
             send_robot_tts_cmd(question_list[0])
+            time.sleep(3)
             send_robot_tts_cmd("Say 'start' when you're ready to start and 'done' when you're finished answering.")
+
 
         if num_questions_asked == 2:
             send_robot_tts_cmd("Here is the second question")
+            time.sleep(3)
             send_robot_tts_cmd(question_list[1])
+            time.sleep(3)
             send_robot_tts_cmd("Say 'start' when you're ready to start and 'done' when you're finished answering.")
+
 
         if num_questions_asked == 3:
             send_robot_tts_cmd("Here is the third question")
+            time.sleep(3)
             send_robot_tts_cmd(question_list[2])
+            time.sleep(3)
             send_robot_tts_cmd("Say 'start' when you're ready to start and 'done' when you're finished answering.")
+
     else:
         pass
 
 def onfinish_task():
     send_robot_tts_cmd("You did an awesome job answering questions today")
+    time.sleep(3)
     send_robot_tts_cmd("Lets talk again tomorrow")
     r6 = sr.Recognizer()
     counter1 = 0    
@@ -141,7 +226,9 @@ def format_filename(time):
 filename = format_filename(str(datetime.datetime.now()))
 
 
+
 if __name__ == '__main__':
+
 
     rec = recorder.Recorder(channels=2)
     with rec.open(filename, 'wb') as recfile2:
@@ -150,6 +237,7 @@ if __name__ == '__main__':
     
 
         while fsm.current != 'end':
+
 
             while fsm.current == 'instructions':
                 PREV_STATE = 'instructions'
@@ -207,6 +295,7 @@ if __name__ == '__main__':
 
                     if "start" in r2.recognize_google(audio):
                         send_robot_tts_cmd('We are starting')
+                        time.sleep(3)
                         fsm.start_listening()
 
                 except sr.UnknownValueError:
@@ -219,11 +308,8 @@ if __name__ == '__main__':
                         PREV_STATE = 'question'
                         fsm.question_to_silence()
 
-
-
-    	    if fsm.current == 'listen':
+    	    while fsm.current == 'listen':
                 send_robot_tts_cmd('im listening')
-
                 # obtain audio 
                 r3 = sr.Recognizer()
                 with sr.Microphone(index) as source:
@@ -270,9 +356,10 @@ if __name__ == '__main__':
 
 
 
-            while fsm.current == 'done':
+            if fsm.current == 'done':
 
                 send_robot_tts_cmd("You are done with that question. Are you ready to move on?")
+                time.sleep(3)
                 send_robot_tts_cmd("If you are ready then say 'yes'. If you are not ready say 'no'")
                 
                 r4 = sr.Recognizer()
@@ -363,7 +450,6 @@ if __name__ == '__main__':
         src = "/home/prg-brix7/projects/ros_catkin_ws/src/jibo_msgs/" + filename
         dst = "/home/prg-brix7/projects/ros_catkin_ws/src/jibo_msgs/audio_files/success/" + filename
         os.rename(src, dst)
-
 
 
             
